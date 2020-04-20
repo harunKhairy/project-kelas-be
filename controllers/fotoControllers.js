@@ -2,6 +2,7 @@ const { db } = require('../connection')
 const { uploader } = require('../helper/uploader')
 const fs = require('fs')
 const crypto = require('crypto')
+const transporter = require('../helper/mailer')
 
 module.exports = {
     postfoto: (req, res) => {
@@ -50,7 +51,7 @@ module.exports = {
     },
 
     deletefoto: (req, res) => {
-        const {id} = req.params
+        const {id} = req.params                             //? req.params.id
         var sql = `select * from foto where id=${id}`
         db.query(sql, (err, result) => {
             if (err) res.status(500).send(err)
@@ -128,5 +129,24 @@ module.exports = {
         const {kata} = req.query
         const kataencript = crypto.createHmac('sha256','puripuri').update(kata).digest('hex')
         res.send(`<h1>${kataencript} dari ${kata} dengan panjang length =${kataencript.length} </h1>`)
-    }
+    },
+
+    kirimemail: (req, res) => {
+        const unyu = fs.readFileSync('unyu.html', 'utf8')
+        // console.log(typeof(unyu))
+        var mailoptions = {
+            from: 'Harun <harun.khairy@gmail.com>',
+            to: 'ikumalasari5@gmail.com',
+            subject: 'Belajar FullStack JavaScript',
+            html: unyu
+        }
+        transporter.sendMail(mailoptions, (err, result) => {
+            if (err) {
+                console.log(err)
+                return res.status(500).send({ status: err })
+            }
+            res.status(200).send({ status: 'success', result })
+        })
+    },
+
 }

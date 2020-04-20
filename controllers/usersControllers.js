@@ -1,4 +1,6 @@
 const { db } = require('../connection')
+const encrypt = require ('../helper/crypto')
+const transporter = require('../helper/mailer')
 
 module.exports = {
     allusers: (req, res) => {
@@ -52,6 +54,54 @@ module.exports = {
                 if (err) return res.status(500).send(err)
                 return res.status(200).send(result1)
             })
+        })
+    },
+
+    registeruser: (req,res) => {
+        const { username, password, email } = req.body
+        const hashpass = encrypt(password)
+        var sql = `select * from users where username='${username}'`
+        db.query(sql, (err, result) => {
+            if (err) return res.status(500).send(err)
+            if (result.length) {
+                return res.status(500).send({ message: 'username telah dipakai' })
+            } else {
+                sql = `insert into users set ?`
+                var data = {
+                    username: username,
+                    password: hashpass,
+                    email
+                }
+                db.query(sql, data, (err, result1) => {
+                    if (err) return res.status(500).send(err)
+                    var LinkVerifikasi = `http://localhost:3000/verified?userid=${result1.insertId}&password=${hashpass}`
+                    transporter.sendMail({
+                        from: 'Harun <harun.khairy@gmail.com>',
+                        to: email,
+                        subject: 'Welcome',
+                        html: `tolong klik link ini untuk verifikasi :
+                        <a href=${LinkVerifikasi}>MInimales verified</a>`,
+                    }, (err, result2) => {
+                        if (err) return res.status(500).send(err)
+                        sql = `select * from users where id=${result1.insertId}`
+                        db.query(sql, (err, result3) => {
+                            if (err) return res.status(500).send(err)
+                            return res.status(200).send(result3[0])
+                        })
+                    })
+                })
+            }
+        })
+    },
+
+    keeplogin: (req, res) => {
+        const { idusers } = req.params
+        var sql = `select * from users where id=${idusers}`
+        db.query(sql, (error, result) => {
+            if (error) {
+                return res.status(500).send(error)
+            }
+            return res.status(200).send(result[0])
         })
     }
 }
