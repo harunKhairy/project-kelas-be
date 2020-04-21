@@ -87,7 +87,9 @@ module.exports = {
                         sql = `select * from users where id=${result1.insertId}`
                         db.query(sql, (err, result3) => {
                             if (err) return res.status(500).send(err)
-                            return res.status(200).send(result3[0])
+                            // return res.status(200).send(result3[0])
+                            const token = createJWTToken({ id: result3[0].id, username: result3[0].username})
+                            return res.status(200).send({ ...result3[0], token })
                         })
                     })
                 })
@@ -96,13 +98,17 @@ module.exports = {
     },
 
     keeplogin: (req, res) => {
-        const { idusers } = req.params
-        var sql = `select * from users where id=${idusers}`
+        // const { idusers } = req.params
+        // var sql = `select * from users where id=${idusers}`
+        console.log(req.user)
+        var sql = `select * from users where id=${req.user.id}`
         db.query(sql, (error, result) => {
             if (error) {
                 return res.status(500).send(error)
             }
-            return res.status(200).send(result[0])
+            // return res.status(200).send(result[0])
+            const token = createJWTToken({ id: result[0].id, username:result[0].username })
+            return res.status(200).send({ ...result[0], token })
         })
     },
 
@@ -137,7 +143,9 @@ module.exports = {
                 return res.status(500).send(err)
             }
             if (result.length) {
-                return res.status(200).send(result[0])//jika user ada
+                // return res.status(200).send(result[0]) ////jika user ada
+                const token = createJWTToken({ id: result[0].id, username: result[0].username })
+                return res.status(200).send({ ...result[0], token: token })//jika user ada
             } else {
                 return res.status(500).send({message:'user nggak ada'})//jika user nggak ada
             }
@@ -153,5 +161,5 @@ module.exports = {
         console.log(req.user)
         res.send({ data: req.user })
     }
-    
+
 }
